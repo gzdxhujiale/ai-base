@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #165dff;
+  --color-brand-soft: #eff5ff;
+  --font-sans: "PingFang SC", "Microsoft YaHei", Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+  html { background: #f6f8fb; }
+  body { margin: 0; min-width: 320px; font-family: var(--font-sans); }
+  button, input { font: inherit; }
+  button { cursor: pointer; }
+}
+
+.ui-input.arco-input-wrapper { border-radius: 8px; border-color: #e5eaf2; box-shadow: none; transition: border-color .18s, box-shadow .18s; }
+.ui-input.arco-input-wrapper:hover { border-color: #b9cdfd; }
+.ui-input.arco-input-wrapper.arco-input-focus { border-color: #165dff; box-shadow: 0 0 0 3px rgba(22, 93, 255, .10); }
+.ui-modal .arco-modal-content { border-radius: 14px; }
+.command-modal .arco-modal-content { padding: 8px; }
+.command-modal .arco-modal { overflow: hidden; }
+.command-input.arco-input-wrapper { height: 44px; border: 0; background: #f7f8fa; box-shadow: none; }
+.command-input.arco-input-wrapper.arco-input-focus { box-shadow: none; }
+.ai-assistant-drawer .arco-drawer-body { height: calc(100vh - 56px); padding: 0 20px 20px; }
