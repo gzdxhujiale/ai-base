@@ -1,0 +1,5 @@
+Project source: DESIGN.MD and src/index.css
+
+The project uses Arco Design components with Tailwind CSS v4 utilities. The current visual tokens include brand #165DFF, soft brand #EFF5FF, a light gray page background, 8px input radius, and a Chinese-first sans-serif stack. Use the checked-in Arco Design skill references under .agents/skills/arco-design for component-level guidance.
+
+This file is a project pointer, not a vendored copy of upstream documentation.
