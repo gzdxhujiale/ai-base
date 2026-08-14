@@ -14,11 +14,13 @@ import {
   Table,
   Tag,
   Timeline,
+  TimePicker,
 } from '@arco-design/web-react'
 import {
   IconClockCircle,
   IconCode,
   IconDashboard,
+  IconDelete,
   IconDownload,
   IconInfoCircle,
   IconLeft,
@@ -32,7 +34,7 @@ import {
   IconUser,
 } from '@arco-design/web-react/icon'
 import { Button, Input, Modal, Tabs } from '../../../UI'
-import type { AppExecutionLog, AppIOField, AppItem } from '../types'
+import type { AppExecutionLog, AppIOField, AppItem, AppTrigger } from '../types'
 import { AppInteractiveDialogModal } from './AppInteractiveDialogModal'
 
 interface AppDetailPageProps {
@@ -72,9 +74,30 @@ export function AppDetailPage({
 
   // Sub-modal: Trigger
   const [addTriggerModalVisible, setAddTriggerModalVisible] = useState(false)
+  const [editingTriggerId, setEditingTriggerId] = useState<string | null>(null)
   const [newTriggerName, setNewTriggerName] = useState('')
   const [newTriggerType, setNewTriggerType] = useState<'cron' | 'event' | 'webhook'>('cron')
   const [newTriggerConfig, setNewTriggerConfig] = useState('')
+  const [cronFrequency, setCronFrequency] = useState<'daily' | 'workday' | 'hourly' | 'weekly' | 'custom'>('daily')
+  const [cronTime, setCronTime] = useState<string>('09:00')
+  const [activeLogStageFilter, setActiveLogStageFilter] = useState<string>('all')
+
+  const handleCronChange = (time: string, freq: 'daily' | 'workday' | 'hourly' | 'weekly' | 'custom') => {
+    setCronTime(time)
+    setCronFrequency(freq)
+    const [h = '09', m = '00'] = (time || '09:00').split(':')
+    const hour = parseInt(h, 10).toString()
+    const min = parseInt(m, 10).toString()
+    if (freq === 'daily') {
+      setNewTriggerConfig(`${min} ${hour} * * *`)
+    } else if (freq === 'workday') {
+      setNewTriggerConfig(`${min} ${hour} * * 1-5`)
+    } else if (freq === 'weekly') {
+      setNewTriggerConfig(`${min} ${hour} * * 1`)
+    } else if (freq === 'hourly') {
+      setNewTriggerConfig(`${min} * * * *`)
+    }
+  }
 
   // Sub-modal: Input Field
   const [inputFieldModalVisible, setInputFieldModalVisible] = useState(false)
@@ -95,30 +118,89 @@ export function AppDetailPage({
 
   const handleViewLogDetail = (log: AppExecutionLog) => {
     setSelectedLogDetail(log)
+    setActiveLogStageFilter('all')
     setLogDrawerVisible(true)
   }
 
-  const handleAddTrigger = () => {
+  const handleOpenAddTrigger = () => {
+    setEditingTriggerId(null)
+    setNewTriggerName('')
+    setNewTriggerType('cron')
+    setCronFrequency('daily')
+    setCronTime('09:00')
+    setNewTriggerConfig('0 9 * * *')
+    setAddTriggerModalVisible(true)
+  }
+
+  const handleOpenEditTrigger = (trig: AppTrigger) => {
+    setEditingTriggerId(trig.id)
+    setNewTriggerName(trig.name)
+    const type = trig.type === 'cron' || trig.type === 'event' || trig.type === 'webhook' ? trig.type : 'cron'
+    setNewTriggerType(type)
+    setNewTriggerConfig(trig.config)
+    if (type === 'cron') {
+      const parts = trig.config.trim().split(/\s+/)
+      if (parts.length >= 2 && !isNaN(Number(parts[0])) && !isNaN(Number(parts[1]))) {
+        const m = parts[0].padStart(2, '0')
+        const h = parts[1].padStart(2, '0')
+        setCronTime(`${h}:${m}`)
+        if (parts[4] === '1-5') {
+          setCronFrequency('workday')
+        } else if (parts[4] === '1') {
+          setCronFrequency('weekly')
+        } else if (parts[1] === '*') {
+          setCronFrequency('hourly')
+        } else {
+          setCronFrequency('daily')
+        }
+      } else {
+        setCronFrequency('custom')
+        setCronTime('09:00')
+      }
+    }
+    setAddTriggerModalVisible(true)
+  }
+
+  const handleSaveTrigger = () => {
     if (!newTriggerName.trim()) {
       Message.warning({ content: '请输入触发器名称' })
       return
     }
-    const updated = {
-      ...app,
-      triggers: [
-        ...app.triggers,
-        {
-          id: generateTriggerId(),
-          name: newTriggerName.trim(),
-          type: newTriggerType,
-          config: newTriggerConfig.trim() || '默认调度配置',
-          enabled: true,
-        },
-      ],
+    if (editingTriggerId) {
+      const updated = {
+        ...app,
+        triggers: app.triggers.map((t) =>
+          t.id === editingTriggerId
+            ? {
+                ...t,
+                name: newTriggerName.trim(),
+                type: newTriggerType,
+                config: newTriggerConfig.trim() || '默认调度配置',
+              }
+            : t,
+        ),
+      }
+      onUpdateApp?.(updated)
+      Message.success({ content: '触发器配置已更新' })
+    } else {
+      const updated = {
+        ...app,
+        triggers: [
+          ...app.triggers,
+          {
+            id: generateTriggerId(),
+            name: newTriggerName.trim(),
+            type: newTriggerType,
+            config: newTriggerConfig.trim() || '默认调度配置',
+            enabled: true,
+          },
+        ],
+      }
+      onUpdateApp?.(updated)
+      Message.success({ content: '触发器添加成功' })
     }
-    onUpdateApp?.(updated)
-    Message.success({ content: '触发器添加成功' })
     setAddTriggerModalVisible(false)
+    setEditingTriggerId(null)
     setNewTriggerName('')
     setNewTriggerConfig('')
   }
@@ -129,6 +211,60 @@ export function AppDetailPage({
       triggers: app.triggers.map((t) => (t.id === triggerId ? { ...t, enabled } : t)),
     }
     onUpdateApp?.(updated)
+  }
+
+  const handleDeleteTrigger = (triggerId: string) => {
+    const updated = {
+      ...app,
+      triggers: app.triggers.filter((t) => t.id !== triggerId),
+    }
+    onUpdateApp?.(updated)
+    Message.success({ content: '触发器已删除' })
+  }
+
+  const getTriggerTypeMeta = (type: string) => {
+    switch (type) {
+      case 'cron':
+        return {
+          icon: <IconClockCircle />,
+          label: '定时 Cron',
+          color: 'arcoblue' as const,
+          bgClass: 'bg-blue-50 text-[#165dff]',
+          modeText: '定时轮询调度',
+        }
+      case 'event':
+        return {
+          icon: <IconThunderbolt />,
+          label: '业务事件',
+          color: 'gold' as const,
+          bgClass: 'bg-amber-50 text-amber-600',
+          modeText: '事件驱动监听',
+        }
+      case 'webhook':
+        return {
+          icon: <IconCode />,
+          label: 'Webhook',
+          color: 'purple' as const,
+          bgClass: 'bg-purple-50 text-purple-600',
+          modeText: 'HTTP 回调调用',
+        }
+      case 'shortcut':
+        return {
+          icon: <IconTag />,
+          label: '快捷交互',
+          color: 'cyan' as const,
+          bgClass: 'bg-sky-50 text-sky-600',
+          modeText: '快捷键触发',
+        }
+      default:
+        return {
+          icon: <IconPlayArrow />,
+          label: '手动触发',
+          color: 'green' as const,
+          bgClass: 'bg-emerald-50 text-emerald-600',
+          modeText: '操作员手动运行',
+        }
+    }
   }
 
   const handleOpenAddField = () => {
@@ -306,11 +442,11 @@ export function AppDetailPage({
           className="app-detail-tabs mb-4"
         >
           <Tabs.TabPane key="overview" title="应用概览与说明" />
-          <Tabs.TabPane key="config" title="输入输出配置与交互框" />
+          <Tabs.TabPane key="config" title="输入输出配置" />
           <Tabs.TabPane key="triggers" title="触发器配置" />
-          <Tabs.TabPane key="status_logs" title="运行状态与日志统计" />
+          <Tabs.TabPane key="status_logs" title="运行日志" />
           <Tabs.TabPane key="versions" title="版本历史演进" />
-          <Tabs.TabPane key="permissions" title="租户与空间权限映射" />
+          <Tabs.TabPane key="permissions" title="权限配置" />
         </Tabs>
 
         {/* Tab 1: Overview & Docs */}
@@ -530,166 +666,233 @@ export function AppDetailPage({
         {/* Tab 3: Triggers Configuration */}
         {activeTab === 'triggers' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-slate-200/80 bg-slate-50/50 p-4">
               <div>
                 <h3 className="text-sm font-bold text-slate-800">应用触发器管理</h3>
-                <p className="text-xs text-slate-500">
-                  支持配置定时调度 (Cron)、业务事件监听、Webhook 回调与快捷键。
+                <p className="mt-0.5 text-xs text-slate-500">
+                  支持配置定时调度 (Cron)、业务事件监听、Webhook 回调与快捷交互，可按需启停和测试触发。
                 </p>
               </div>
               <Button
                 type="primary"
                 size="small"
                 icon={<IconPlus />}
-                className="!rounded-lg"
-                onClick={() => setAddTriggerModalVisible(true)}
+                className="!rounded-[2px] shrink-0"
+                onClick={handleOpenAddTrigger}
               >
                 新增触发器
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {app.triggers.map((trig) => (
-                <div
-                  key={trig.id}
-                  className="flex items-start justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-xs"
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="flex size-10 items-center justify-center rounded-xl bg-blue-50 text-lg text-[#165dff]">
-                      {trig.type === 'cron' ? (
-                        <IconClockCircle />
-                      ) : trig.type === 'event' ? (
-                        <IconThunderbolt />
-                      ) : (
-                        <IconCode />
-                      )}
-                    </span>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-800">{trig.name}</span>
-                        <Tag size="small" color="arcoblue">
-                          {trig.type}
-                        </Tag>
-                      </div>
-                      <p className="mt-1 inline-block rounded border border-slate-100 bg-slate-50 px-2 py-0.5 font-mono text-xs text-slate-500">
-                        {trig.config}
-                      </p>
-                    </div>
-                  </div>
+            {app.triggers.length === 0 ? (
+              <div className="py-12 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl bg-slate-50/30">
+                暂无配置触发器，点击右上角“新增触发器”进行配置
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {app.triggers.map((trig) => {
+                  const meta = getTriggerTypeMeta(trig.type)
+                  return (
+                    <div
+                      key={trig.id}
+                      className={`flex flex-col justify-between rounded-xl border p-4 shadow-xs transition-all duration-200 hover:shadow-md ${
+                        trig.enabled
+                          ? 'border-slate-200/90 bg-white hover:border-blue-200'
+                          : 'border-slate-200/60 bg-slate-50/60 opacity-80'
+                      }`}
+                    >
+                      {/* Header */}
+                      <div>
+                        <div className="flex items-start justify-between gap-2.5">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl text-lg shadow-2xs ${meta.bgClass}`}>
+                              {meta.icon}
+                            </span>
+                            <div className="min-w-0">
+                              <h4 className="truncate text-sm font-bold text-slate-800" title={trig.name}>
+                                {trig.name}
+                              </h4>
+                              <div className="mt-1 flex items-center gap-1.5">
+                                <Tag size="small" color={meta.color}>
+                                  {meta.label}
+                                </Tag>
+                              </div>
+                            </div>
+                          </div>
 
-                  <Switch
-                    checked={trig.enabled}
-                    size="small"
-                    onChange={(checked) => handleToggleTrigger(trig.id, checked)}
-                  />
-                </div>
-              ))}
-            </div>
+                          <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+                            <span className="text-[11px] text-slate-400">
+                              {trig.enabled ? '启用' : '暂停'}
+                            </span>
+                            <Switch
+                              checked={trig.enabled}
+                              size="small"
+                              onChange={(checked) => handleToggleTrigger(trig.id, checked)}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Expression Box */}
+                        <div className="my-3 rounded-lg border border-slate-100 bg-slate-50/80 p-2.5">
+                          <div className="mb-1.5 flex items-center justify-between text-[11px] text-slate-400">
+                            <span className="font-medium text-slate-600">调度规则 / 监听参数</span>
+                            <span className="font-mono text-[10px]">{trig.id}</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <code className="truncate rounded border border-slate-200/70 bg-white px-2 py-0.5 font-mono text-xs font-semibold text-slate-700 shadow-2xs">
+                              {trig.config}
+                            </code>
+                            <span className="shrink-0 text-[11px] text-slate-400 font-sans">
+                              {meta.modeText}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Footer Actions */}
+                      <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`size-2 rounded-full ${
+                              trig.enabled ? 'animate-pulse bg-emerald-500' : 'bg-slate-300'
+                            }`}
+                          />
+                          <span className="text-xs text-slate-500">
+                            {trig.enabled ? '状态活跃' : '已停用'}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <Button
+                            type="text"
+                            size="mini"
+                            className="!text-slate-600 hover:!text-[#165dff] !px-1.5"
+                            onClick={() => handleOpenEditTrigger(trig)}
+                          >
+                            配置
+                          </Button>
+                          <Button
+                            type="text"
+                            size="mini"
+                            className="!text-[#165dff] !px-1.5"
+                            onClick={() => {
+                              Message.info({ content: `正在测试执行触发器: ${trig.name}` })
+                              setInteractiveModalVisible(true)
+                            }}
+                          >
+                            测试触发
+                          </Button>
+                          <Popconfirm
+                            title="确定要删除此触发器吗？"
+                            onOk={() => handleDeleteTrigger(trig.id)}
+                            okText="删除"
+                            cancelText="取消"
+                          >
+                            <Button
+                              type="text"
+                              status="danger"
+                              size="mini"
+                              className="!px-1.5"
+                              icon={<IconDelete />}
+                            />
+                          </Popconfirm>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 
         {/* Tab 4: Status & Logs */}
         {activeTab === 'status_logs' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="rounded-xl border border-slate-200 bg-white p-4">
-                <span className="mb-1 block text-xs text-slate-400">当前运行状态</span>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`size-2.5 rounded-full ${
-                      app.runStatus === 'running'
-                        ? 'animate-pulse bg-emerald-500'
-                        : app.runStatus === 'failed'
-                          ? 'bg-rose-500'
-                          : 'bg-blue-500'
-                    }`}
-                  />
-                  <strong className="text-base font-bold capitalize text-slate-900">
-                    {app.runStatus}
-                  </strong>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-4">
-                <span className="mb-1 block text-xs text-slate-400">成功率</span>
-                <strong className="text-xl font-bold text-emerald-600">{app.successRate}%</strong>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-4">
-                <span className="mb-1 block text-xs text-slate-400">累计节省时间</span>
-                <strong className="text-xl font-bold text-slate-900">{app.savedPersonDays}</strong>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-4">
-                <span className="mb-1 block text-xs text-slate-400">运行成本/节省</span>
-                <strong className="text-xl font-bold text-slate-900">{app.costSaved}</strong>
-              </div>
+          <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-bold text-slate-800">历史运行日志</h4>
             </div>
 
-            <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-bold text-slate-800">历史运行日志 (Execution Logs)</h4>
-                <Button
-                  type="secondary"
-                  size="mini"
-                  onClick={() => setInteractiveModalVisible(true)}
-                >
-                  手动测试运行一次
-                </Button>
-              </div>
-
-              <Table
-                data={app.logs}
-                pagination={{ pageSize: 5 }}
-                size="small"
-                border
-                rowKey="id"
-                columns={[
-                  { title: '日志 ID', dataIndex: 'id', width: 100 },
-                  { title: '开始时间', dataIndex: 'startTime', width: 170 },
-                  { title: '耗时', dataIndex: 'duration', width: 90 },
-                  { title: '触发来源', dataIndex: 'triggerSource', width: 140 },
-                  {
-                    title: '运行结果',
-                    dataIndex: 'status',
-                    width: 110,
-                    render: (_, record) => (
-                      <Tag
-                        size="small"
-                        color={
-                          record.status === 'success'
-                            ? 'green'
-                            : record.status === 'running'
-                              ? 'arcoblue'
-                              : 'red'
-                        }
-                      >
-                        {record.status === 'success'
-                          ? '成功'
+            <Table
+              data={app.logs}
+              pagination={{ pageSize: 5 }}
+              size="small"
+              border
+              rowKey="id"
+              columns={[
+                { title: '日志 ID', dataIndex: 'id', width: 110 },
+                {
+                  title: '执行链路',
+                  width: 170,
+                  render: (_, record) => {
+                    const stages = record.stages || []
+                    if (stages.length === 0) {
+                      return <span className="text-xs text-slate-400">单节点</span>
+                    }
+                    const colorMap: Record<string, string> = {
+                      RPA: 'blue',
+                      Agent: 'purple',
+                      数据库: 'gold',
+                      后端: 'cyan',
+                      其他: 'gray',
+                    }
+                    return (
+                      <div className="flex flex-wrap items-center gap-1">
+                        {stages.map((st, i) => (
+                          <div key={i} className="flex items-center gap-1">
+                            <Tag size="small" color={colorMap[st.type] || 'arcoblue'} className="!px-1.5 !text-[11px]">
+                              {st.type}
+                            </Tag>
+                            {i < stages.length - 1 && <span className="text-[10px] text-slate-300">→</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  },
+                },
+                { title: '开始时间', dataIndex: 'startTime', width: 170 },
+                { title: '耗时', dataIndex: 'duration', width: 90 },
+                { title: '触发来源', dataIndex: 'triggerSource', width: 130 },
+                {
+                  title: '运行结果',
+                  dataIndex: 'status',
+                  width: 100,
+                  render: (_, record) => (
+                    <Tag
+                      size="small"
+                      color={
+                        record.status === 'success'
+                          ? 'green'
                           : record.status === 'running'
-                            ? '运行中'
-                            : '失败'}
-                      </Tag>
-                    ),
-                  },
-                  { title: '输出摘要', dataIndex: 'outputSummary' },
-                  {
-                    title: '操作',
-                    width: 90,
-                    render: (_, record) => (
-                      <Button
-                        type="text"
-                        size="mini"
-                        className="!text-[#165dff]"
-                        onClick={() => handleViewLogDetail(record)}
-                      >
-                        日志详情
-                      </Button>
-                    ),
-                  },
-                ]}
-              />
-            </div>
+                            ? 'arcoblue'
+                            : 'red'
+                      }
+                    >
+                      {record.status === 'success'
+                        ? '成功'
+                        : record.status === 'running'
+                          ? '运行中'
+                          : '失败'}
+                    </Tag>
+                  ),
+                },
+                { title: '输出摘要', dataIndex: 'outputSummary' },
+                {
+                  title: '操作',
+                  width: 90,
+                  render: (_, record) => (
+                    <Button
+                      type="text"
+                      size="mini"
+                      className="!text-[#165dff]"
+                      onClick={() => handleViewLogDetail(record)}
+                    >
+                      日志详情
+                    </Button>
+                  ),
+                },
+              ]}
+            />
           </div>
         )}
 
@@ -800,26 +1003,138 @@ export function AppDetailPage({
       {/* Sub Drawer: Log Details */}
       <Drawer
         visible={logDrawerVisible}
-        width={500}
-        title="运行日志详情"
+        width={640}
+        title={
+          <div className="flex items-center justify-between w-full pr-6">
+            <span className="font-bold text-slate-800">运行日志详情</span>
+            {selectedLogDetail && (
+              <span className="font-mono text-xs text-slate-400">流水号: {selectedLogDetail.id}</span>
+            )}
+          </div>
+        }
         footer={null}
-        onCancel={() => setLogDrawerVisible(false)}
+        onCancel={() => {
+          setLogDrawerVisible(false)
+          setActiveLogStageFilter('all')
+        }}
       >
         {selectedLogDetail && (
           <div className="space-y-4">
-            <div className="overflow-x-auto whitespace-pre-wrap rounded-lg bg-slate-900 p-4 font-mono text-xs leading-6 text-slate-200">
-              {selectedLogDetail.logText}
-            </div>
+            {/* Stage Filter Buttons if multiple stages exist */}
+            {selectedLogDetail.stages && selectedLogDetail.stages.length > 0 && (
+              <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setActiveLogStageFilter('all')}
+                    className={`px-3 py-1.5 text-xs rounded-lg font-medium transition cursor-pointer ${
+                      activeLogStageFilter === 'all'
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    全部链路 ({selectedLogDetail.stages.length} 个节点)
+                  </button>
+                  {selectedLogDetail.stages.map((stage, idx) => {
+                    const typeColor =
+                      stage.type === 'RPA'
+                        ? 'blue'
+                        : stage.type === 'Agent'
+                          ? 'purple'
+                          : stage.type === '数据库'
+                            ? 'gold'
+                            : stage.type === '后端'
+                              ? 'cyan'
+                              : 'gray'
+                    const isSelected = activeLogStageFilter === stage.type
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setActiveLogStageFilter(stage.type)}
+                        className={`px-2.5 py-1.5 text-xs rounded-lg font-medium transition flex items-center gap-1.5 cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#165dff] text-white shadow-xs'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        <Tag size="small" color={isSelected ? 'arcoblue' : typeColor} className="!border-0 !px-1.5 !text-[10px] !leading-4">
+                          {stage.type}
+                        </Tag>
+                        <span>{stage.name || stage.type}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Stage Logs List */}
+            {selectedLogDetail.stages && selectedLogDetail.stages.length > 0 ? (
+              <div className="space-y-4">
+                {selectedLogDetail.stages
+                  .filter((stage) => activeLogStageFilter === 'all' || stage.type === activeLogStageFilter)
+                  .map((stage, idx) => {
+                    const typeColor =
+                      stage.type === 'RPA'
+                        ? 'blue'
+                        : stage.type === 'Agent'
+                          ? 'purple'
+                          : stage.type === '数据库'
+                            ? 'gold'
+                            : stage.type === '后端'
+                              ? 'cyan'
+                              : 'gray'
+                    return (
+                      <div
+                        key={idx}
+                        className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-2xs"
+                      >
+                        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/90 px-3.5 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <Tag size="small" color={typeColor}>
+                              {stage.type}
+                            </Tag>
+                            <span className="text-xs font-bold text-slate-800">
+                              {stage.name || `${stage.type} 执行日志`}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[11px] text-slate-400 font-mono">
+                            {stage.duration && <span>耗时: {stage.duration}</span>}
+                            <span className="size-1.5 rounded-full bg-emerald-500" />
+                          </div>
+                        </div>
+                        <div className="overflow-x-auto whitespace-pre-wrap bg-slate-900 p-4 font-mono text-xs leading-6 text-slate-200">
+                          {stage.logText}
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-2xs">
+                <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/90 px-3.5 py-2.5">
+                  <span className="text-xs font-bold text-slate-800">控制台执行日志</span>
+                  <span className="text-[11px] font-mono text-slate-400">{selectedLogDetail.duration}</span>
+                </div>
+                <div className="overflow-x-auto whitespace-pre-wrap bg-slate-900 p-4 font-mono text-xs leading-6 text-slate-200">
+                  {selectedLogDetail.logText}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </Drawer>
 
-      {/* Sub Modal: Add Trigger */}
+      {/* Sub Modal: Add/Edit Trigger */}
       <Modal
         visible={addTriggerModalVisible}
-        title="添加新触发器"
-        onCancel={() => setAddTriggerModalVisible(false)}
-        onOk={handleAddTrigger}
+        title={editingTriggerId ? '配置触发器' : '添加新触发器'}
+        onCancel={() => {
+          setAddTriggerModalVisible(false)
+          setEditingTriggerId(null)
+        }}
+        onOk={handleSaveTrigger}
       >
         <Form layout="vertical">
           <Form.Item label="触发器名称" required>
@@ -830,22 +1145,81 @@ export function AppDetailPage({
               onChange={(val) => setNewTriggerName(val)}
             />
           </Form.Item>
+
           <Form.Item label="触发器类型">
             <Select
               value={newTriggerType}
               className="minimal-radius !rounded-[2px]"
-              onChange={(val) => setNewTriggerType(val)}
+              onChange={(val) => {
+                const type = val as 'cron' | 'event' | 'webhook'
+                setNewTriggerType(type)
+                if (type === 'cron') {
+                  handleCronChange(cronTime, cronFrequency)
+                } else if (type === 'event') {
+                  setNewTriggerConfig('ORDER_PAYMENT_SUCCESS')
+                } else {
+                  setNewTriggerConfig('/api/v1/webhook/orders')
+                }
+              }}
             >
-              <Select.Option value="cron">定时 Cron</Select.Option>
+              <Select.Option value="cron">定时 Cron (定时调度)</Select.Option>
               <Select.Option value="event">业务事件监听</Select.Option>
               <Select.Option value="webhook">Webhook 回调</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item label="规则表达式 / 事件描述">
+
+          {/* Conditional Time Picker & Frequency for Cron */}
+          {newTriggerType === 'cron' && (
+            <>
+              <Form.Item label="调度执行周期">
+                <Radio.Group
+                  type="button"
+                  value={cronFrequency}
+                  onChange={(val) => handleCronChange(cronTime, val)}
+                  className="minimal-radius !rounded-[2px]"
+                >
+                  <Radio value="daily">每天</Radio>
+                  <Radio value="workday">工作日 (周一至周五)</Radio>
+                  <Radio value="weekly">每周一</Radio>
+                  <Radio value="hourly">每小时</Radio>
+                  <Radio value="custom">自定义</Radio>
+                </Radio.Group>
+              </Form.Item>
+
+              {cronFrequency !== 'hourly' && cronFrequency !== 'custom' && (
+                <Form.Item label="定时执行时间" required>
+                  <TimePicker
+                    format="HH:mm"
+                    value={cronTime}
+                    onChange={(timeStr) => handleCronChange(timeStr || '09:00', cronFrequency)}
+                    className="w-full minimal-radius !rounded-[2px]"
+                    placeholder="选择具体时间 (如 09:30)"
+                  />
+                </Form.Item>
+              )}
+            </>
+          )}
+
+          <Form.Item
+            label={
+              newTriggerType === 'cron'
+                ? 'Cron 规则表达式'
+                : newTriggerType === 'event'
+                  ? '业务监听事件名称'
+                  : 'Webhook 回调路径 / URL'
+            }
+            required
+          >
             <Input
               value={newTriggerConfig}
-              placeholder="0 18 * * 1-5 或 订单支付成功事件"
-              className="minimal-radius !rounded-[2px]"
+              placeholder={
+                newTriggerType === 'cron'
+                  ? '例如：0 9 * * *'
+                  : newTriggerType === 'event'
+                    ? '例如：ORDER_PAYMENT_SUCCESS'
+                    : '例如：/api/v1/webhook/orders'
+              }
+              className="minimal-radius !rounded-[2px] font-mono"
               onChange={(val) => setNewTriggerConfig(val)}
             />
           </Form.Item>

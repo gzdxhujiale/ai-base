@@ -26,6 +26,16 @@ export interface AppVersion {
   changelog: string
 }
 
+export type LogComponentType = 'RPA' | 'Agent' | '数据库' | '后端' | '其他'
+
+export interface AppExecutionStageLog {
+  type: LogComponentType
+  name?: string
+  status?: 'success' | 'failed' | 'running'
+  duration?: string
+  logText: string
+}
+
 export interface AppExecutionLog {
   id: string
   startTime: string
@@ -34,6 +44,7 @@ export interface AppExecutionLog {
   triggerSource: string
   logText: string
   outputSummary: string
+  stages?: AppExecutionStageLog[]
 }
 
 export interface AppPermissionMapping {

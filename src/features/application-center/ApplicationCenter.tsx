@@ -123,7 +123,31 @@ const initialApps: AppItem[] = [
       { version: '版本 1', releaseTime: '2026-01-10 14:36:03', author: 'admin@bigdata', changelog: '用户测试完成，正式上架官方应用。' },
     ],
     logs: [
-      { id: 'log-101', startTime: '2026-08-12 11:20:00', duration: '14.8s', status: 'success', triggerSource: '定时任务', logText: '[11:20:00] 启动浏览器环境\n[11:20:03] 登录天猫商家后台成功\n[11:20:08] 检索到 86 条待处理投诉\n[11:20:14] 数据写入 C:/Exports/Tmall_Complaints.xlsx\n[11:20:15] 任务完成！', outputSummary: '成功生成 86 条投诉记录' },
+      {
+        id: 'log-101',
+        startTime: '2026-08-12 11:20:00',
+        duration: '14.8s',
+        status: 'success',
+        triggerSource: '定时任务',
+        logText: '[11:20:00] 启动浏览器环境\n[11:20:03] 登录天猫商家后台成功\n[11:20:08] 检索到 86 条待处理投诉\n[11:20:14] 数据写入 C:/Exports/Tmall_Complaints.xlsx\n[11:20:15] 任务完成！',
+        outputSummary: '成功生成 86 条投诉记录',
+        stages: [
+          {
+            type: 'RPA',
+            name: 'RPA 自动化流程',
+            status: 'success',
+            duration: '9.2s',
+            logText: '[11:20:00] 启动 Chrome 无头浏览器环境 (PID: 9021)\n[11:20:03] 登录天猫商家后台成功 (Token 校验通过)\n[11:20:08] 检索到 86 条待处理投诉工单\n[11:20:09] 批量抓取投诉文本与订单详情完成',
+          },
+          {
+            type: '数据库',
+            name: '数据库写入与归档',
+            status: 'success',
+            duration: '5.6s',
+            logText: '[11:20:10] 连接 MySQL 业务主库 (tmall_trade_db)\n[11:20:11] 执行批量插入: INSERT INTO complaint_records (86 rows)...\n[11:20:14] 写入成功，受影响行数: 86\n[11:20:15] 任务流水号 TX-88219 提交事务完成！',
+          },
+        ],
+      },
     ],
     permissions: {
       spaces: ['public', 'rnd'],
@@ -174,7 +198,38 @@ const initialApps: AppItem[] = [
     outputs: [{ key: 'report', label: '巡检报告 PDF', type: 'file', required: true, description: '多站点健康度的合规摘要' }],
     versions: [{ version: 'v2.1', releaseTime: '2026-07-10 10:00:00', author: 'crossborder', changelog: '支持日本站与中东站绩效抓取。' }],
     logs: [
-      { id: 'log-amz-1', startTime: '2026-08-12 13:00:00', duration: '22s', status: 'success', triggerSource: '定时巡检', logText: '[13:00:00] 开始巡检 12 个站点...\n[13:00:22] 全部指标处于安全阈值内。', outputSummary: '巡检完成，状态正常' },
+      {
+        id: 'log-amz-1',
+        startTime: '2026-08-12 13:00:00',
+        duration: '22s',
+        status: 'success',
+        triggerSource: '定时巡检',
+        logText: '[13:00:00] 开始巡检 12 个站点...\n[13:00:22] 全部指标处于安全阈值内。',
+        outputSummary: '巡检完成，状态正常',
+        stages: [
+          {
+            type: 'Agent',
+            name: 'Agent 智能诊断',
+            status: 'success',
+            duration: '12.4s',
+            logText: '[13:00:00] 调度 Amazon Health Inspector Agent...\n[13:00:04] 正在分析 12 个站点 ODR 与迟发率指标\n[13:00:10] 经模型推理：各站点指标均在安全阈值 (1.0%) 范围内\n[13:00:12] 生成巡检诊断报告',
+          },
+          {
+            type: '后端',
+            name: '后端服务接口',
+            status: 'success',
+            duration: '4.8s',
+            logText: '[13:00:13] POST /api/v2/crossborder/patrol/report (HTTP 200 OK)\n[13:00:15] 推送钉钉群机器人 Webhook\n[13:00:17] 消息发送成功 (msgId: dding-9921)',
+          },
+          {
+            type: '数据库',
+            name: '数据库记录',
+            status: 'success',
+            duration: '4.8s',
+            logText: '[13:00:18] INSERT INTO patrol_daily_logs (sites_checked=12, status="healthy")\n[13:00:22] 归档完成',
+          },
+        ],
+      },
     ],
     permissions: {
       spaces: ['public', 'jv'],
@@ -200,7 +255,7 @@ const initialApps: AppItem[] = [
     requirementsDoc: `每日定时抓取指定店铺新品列表，对比已有 SKU。`,
     featureDoc: `抓取商品图文、主图、价格、销量趋势，基于大模型分析设计风格与卖点。`,
     usageDoc: `配置监测店铺 URL 列表，运行后生成分析报告。`,
-    developer: '研发中心 AI 组',
+    developer: '研发中心 AI组',
     developerEmail: 'rd-ai@corp.com',
     isOfficial: false,
     likes: 18,
@@ -220,7 +275,38 @@ const initialApps: AppItem[] = [
     outputs: [{ key: 'insightSummary', label: '竞品情报摘要', type: 'text', required: true, description: 'AI 总结的流行趋势分析' }],
     versions: [{ version: 'v1.2', releaseTime: '2026-06-01 09:00:00', author: 'rd-ai', changelog: '增加样式标签大模型自动标注。' }],
     logs: [
-      { id: 'log-comp-1', startTime: '2026-08-12 08:00:00', duration: '35s', status: 'success', triggerSource: '定时任务', logText: '[08:00:00] 正在请求竞店接口...\n[08:08:35] 完成趋势分析。', outputSummary: '解析 12 款新品' },
+      {
+        id: 'log-comp-1',
+        startTime: '2026-08-12 08:00:00',
+        duration: '35s',
+        status: 'success',
+        triggerSource: '定时任务',
+        logText: '[08:00:00] 正在请求竞店接口...\n[08:08:35] 完成趋势分析。',
+        outputSummary: '解析 12 款新品',
+        stages: [
+          {
+            type: 'RPA',
+            name: 'RPA 爬虫采集',
+            status: 'success',
+            duration: '18.0s',
+            logText: '[08:00:00] 启动爬虫 Worker 并发采集目标竞店商品页...\n[08:00:15] 成功解析 12 款新品列表与详情页数据',
+          },
+          {
+            type: 'Agent',
+            name: 'Agent 风格与卖点解析',
+            status: 'success',
+            duration: '10.5s',
+            logText: '[08:00:16] 调用大模型提取新品风格标签与价格带分布...\n[08:00:25] 提取完成，生成 12 条竞品特征向量',
+          },
+          {
+            type: '数据库',
+            name: '数据库持久化',
+            status: 'success',
+            duration: '6.5s',
+            logText: '[08:00:26] 批量更新 competitor_sku_pool 表\n[08:00:35] 写入完成，触发早报通知',
+          },
+        ],
+      },
     ],
     permissions: {
       spaces: ['rnd'],
@@ -354,7 +440,38 @@ const initialApps: AppItem[] = [
     outputs: [{ key: 'matchReport', label: '人岗匹配打分表', type: 'file', required: true, description: '多维度匹配诊断报告' }],
     versions: [{ version: 'v1.5', releaseTime: '2026-07-20 10:00:00', author: 'hr-tech', changelog: '优化技术栈契合度加权算法。' }],
     logs: [
-      { id: 'log-rec-1', startTime: '2026-08-11 15:30:00', duration: '18s', status: 'success', triggerSource: '手动触发', logText: '[15:30:00] 解析简历包完成\n[15:30:18] 成功生成 32 份匹配报告', outputSummary: '已匹配 32 份简历' },
+      {
+        id: 'log-rec-1',
+        startTime: '2026-08-11 15:30:00',
+        duration: '18s',
+        status: 'success',
+        triggerSource: '手动触发',
+        logText: '[15:30:00] 解析简历包完成\n[15:30:18] 成功生成 32 份匹配报告',
+        outputSummary: '已匹配 32 份简历',
+        stages: [
+          {
+            type: '后端',
+            name: '后端文件解析',
+            status: 'success',
+            duration: '6.0s',
+            logText: '[15:30:00] 解压 Candidates.zip 简历包 (32 份 PDF)\n[15:30:05] OCR 与文本结构化提取完成',
+          },
+          {
+            type: 'Agent',
+            name: 'Agent 人岗匹配打分',
+            status: 'success',
+            duration: '8.5s',
+            logText: '[15:30:06] 基于岗位 JD 计算 32 份候选人多维匹配度...\n[15:30:14] 打分矩阵生成完成，平均匹配度 88.5%',
+          },
+          {
+            type: '数据库',
+            name: '数据库归档',
+            status: 'success',
+            duration: '3.5s',
+            logText: '[15:30:15] 批量更新 hr_candidate_scores 表\n[15:30:18] 成功生成 32 份匹配报告',
+          },
+        ],
+      },
     ],
     permissions: {
       spaces: ['public'],
@@ -437,7 +554,31 @@ const initialApps: AppItem[] = [
     outputs: [{ key: 'copyText', label: '生成文案内容', type: 'text', required: true, description: '多套文案候选' }],
     versions: [{ version: 'v1.1', releaseTime: '2026-08-01 16:00:00', author: 'creative', changelog: '新增小红书爆款 Emoji 排版模板。' }],
     logs: [
-      { id: 'log-copy-1', startTime: '2026-08-12 09:15:00', duration: '3.2s', status: 'success', triggerSource: '手动生成', logText: '[09:15:00] 解析商品卖点...\n[09:15:03] 生成 3 篇小红书风格文案。', outputSummary: '成功生成 3 篇文案' },
+      {
+        id: 'log-copy-1',
+        startTime: '2026-08-12 09:15:00',
+        duration: '3.2s',
+        status: 'success',
+        triggerSource: '手动生成',
+        logText: '[09:15:00] 解析商品卖点...\n[09:15:03] 生成 3 篇小红书风格文案。',
+        outputSummary: '成功生成 3 篇文案',
+        stages: [
+          {
+            type: 'Agent',
+            name: 'Agent 文案生成',
+            status: 'success',
+            duration: '2.4s',
+            logText: '[09:15:00] 加载小红书爆款文案 Prompt 模板\n[09:15:01] 模型推理生成 3 套差异化卖点文案与 Emoji 排版',
+          },
+          {
+            type: '后端',
+            name: '后端格式校验',
+            status: 'success',
+            duration: '0.8s',
+            logText: '[09:15:02] 文案格式校验与敏感词过滤通过\n[09:15:03] 组装 JSON 响应返回客户端',
+          },
+        ],
+      },
     ],
     permissions: {
       spaces: ['personal'],
@@ -574,6 +715,22 @@ export function ApplicationCenter() {
       triggerSource: '手动运行对话框',
       logText: `[${nowStr}] 交互框传参: ${JSON.stringify(inputValues)}\n[${nowStr}] 唤起自动化执行引擎...\n[${nowStr}] 正在处理业务逻辑中...`,
       outputSummary: '运行中',
+      stages: [
+        {
+          type: 'RPA',
+          name: 'RPA 交互执行',
+          status: 'running',
+          duration: '执行中...',
+          logText: `[${nowStr}] 接收前端表单入参: ${JSON.stringify(inputValues)}\n[${nowStr}] 正在调度 RPA 执行器...`,
+        },
+        {
+          type: '数据库',
+          name: '数据库写入',
+          status: 'running',
+          duration: '等待就绪',
+          logText: `[${nowStr}] 等待 RPA 执行输出后开始事务持久化...`,
+        },
+      ],
     }
 
     const runningApp: AppItem = {
@@ -592,6 +749,22 @@ export function ApplicationCenter() {
         duration: '2.6s',
         logText: `${newLog.logText}\n[${new Date().toLocaleString()}] 执行成功！返回结果与参数写回完毕。`,
         outputSummary: '本次模拟执行成功',
+        stages: [
+          {
+            type: 'RPA',
+            name: 'RPA 交互执行',
+            status: 'success',
+            duration: '1.8s',
+            logText: `[${nowStr}] 接收前端表单入参: ${JSON.stringify(inputValues)}\n[${nowStr}] 调度 RPA 执行器完成，流程正常结束`,
+          },
+          {
+            type: '数据库',
+            name: '数据库写入',
+            status: 'success',
+            duration: '0.8s',
+            logText: `[${nowStr}] 事务提交完成，更新主表与运行日志表成功。`,
+          },
+        ],
       }
 
       setApps((currentApps) =>
@@ -926,10 +1099,6 @@ export function ApplicationCenter() {
                       运行
                     </Button>
                   )}
-
-                  <span className="text-[11px] text-slate-400">
-                    {app.isInstalled ? '已在当前空间上线' : '尚未安装'}
-                  </span>
                 </div>
 
                 <button

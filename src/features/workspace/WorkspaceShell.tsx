@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { Avatar, Dropdown, Menu, Tooltip } from '@arco-design/web-react'
 import {
   IconApps,
+  IconBook,
   IconBulb,
   IconCalendar,
   IconDashboard,
@@ -35,6 +36,7 @@ const navItems: NavigationItem[] = [
   { id: 'workbench', label: '我的工作台', description: '聚合待办、日程与团队动态', icon: <IconHome />, tone: 'bg-blue-500' },
   { id: 'tasks', label: '任务中心', description: '管理任务进度与协作事项', icon: <IconCalendar />, tone: 'bg-violet-500' },
   { id: 'apps', label: '应用中心', description: '发现并使用企业应用', icon: <IconApps />, tone: 'bg-sky-500' },
+  { id: 'knowledge', label: '知识库', description: '构建与共享企业领域知识库', icon: <IconBook />, tone: 'bg-indigo-500' },
   { id: 'map', label: '经营地图', description: '查看组织及业务全貌', icon: <IconDashboard />, tone: 'bg-emerald-500' },
   { id: 'insights', label: '经营洞察', description: '通过数据发现经营机会', icon: <IconBulb />, tone: 'bg-amber-500' },
   { id: 'ai', label: 'AI 升级', description: '用 AI 提升业务效率', icon: <IconRobot />, tone: 'bg-fuchsia-500' },
