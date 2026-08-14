@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  srcDir: 'docs-site',
+  srcDir: 'docs',
   title: 'AI Base 知识库',
   description: 'AI Base 企业工作台项目知识库',
   lang: 'zh-CN',
@@ -33,6 +33,7 @@ export default defineConfig({
             { text: '设计文档索引', link: '/design-docs/' },
             { text: '核心信念', link: '/design-docs/core-beliefs' },
             { text: '工作台交互模型', link: '/design-docs/workspace-interaction-model' },
+            { text: '应用中心', link: '/design-docs/application-center' },
           ],
         },
       ],
@@ -52,6 +53,15 @@ export default defineConfig({
             { text: '技术债务追踪', link: '/exec-plans/tech-debt-tracker' },
             { text: '活跃计划', link: '/exec-plans/active/README' },
             { text: '已完成计划', link: '/exec-plans/completed/README' },
+          ],
+        },
+      ],
+      '/agent/': [
+        {
+          text: 'Agent 治理',
+          items: [
+            { text: 'Skills', link: '/agent/skill' },
+            { text: 'Skill 编写', link: '/agent/skill-authoring' },
           ],
         },
       ],

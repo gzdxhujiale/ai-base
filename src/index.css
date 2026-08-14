@@ -23,3 +23,13 @@
 .command-input.arco-input-wrapper { height: 44px; border: 0; background: #f7f8fa; box-shadow: none; }
 .command-input.arco-input-wrapper.arco-input-focus { box-shadow: none; }
 .ai-assistant-drawer .arco-drawer-body { height: calc(100vh - 56px); padding: 0 20px 20px; }
+.app-filter-tabs .arco-tabs-content { display: none; }
+.app-filter-tabs .arco-tabs-header { margin-bottom: 0; }
+.app-filter-tabs .arco-tabs-header-title { padding: 0 16px 12px; color: #4e5969; font-size: 14px; }
+.app-filter-tabs .arco-tabs-header-title:first-child { padding-left: 0; }
+.app-filter-tabs .arco-tabs-header-title-active { color: #165dff; font-weight: 500; }
+.app-filter-tabs .arco-tabs-header-ink { height: 2px; background: #165dff; }
+.create-application-modal .arco-modal-body { padding-top: 14px; }
+.create-application-modal .arco-tabs-header { margin-bottom: 16px; }
+.create-application-modal .arco-modal-header { position: relative; text-align: center; }
+.create-application-modal .arco-modal-title { display: inline-flex; }

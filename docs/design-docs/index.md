@@ -6,5 +6,6 @@
 
 - [核心信念](./core-beliefs.md)：本项目的产品与交互判断标准。
 - [工作台交互模型](./workspace-interaction-model.md)：导航、命令搜索和企业 AI 入口的当前行为。
+- [应用中心](./application-center.md)：应用浏览、双维度筛选和创建弹窗的当前原型行为。
 
-设计细节还应参考根目录的 `DESIGN.MD`（Windows 下等同于请求中的 `DESIGN.md`）以及 `docs/DESIGN.md` 的项目摘要。
+跨功能的长期设计原则见 [设计原则](../DESIGN.md)；根目录的 `DESIGN.MD` 仅是大型参考资料副本，不是项目设计规则的事实来源。

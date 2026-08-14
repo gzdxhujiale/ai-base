@@ -20,6 +20,7 @@ import {
 import { Input } from '../../UI/Input'
 import { Modal } from '../../UI/Modal'
 import { AiAssistantDrawer } from '../../UI/AiAssistantDrawer'
+import { ApplicationCenter } from '../application-center/ApplicationCenter'
 import { useWorkspaceStore } from '../../stores/workspace-store'
 
 type NavigationItem = {
@@ -133,7 +134,7 @@ export function WorkspaceShell() {
 
         <section className={`min-w-0 transition-[margin] duration-200 md:ml-60 ${isSidebarCollapsed ? 'md:ml-[72px]' : ''}`}>
           <div className="flex h-14 items-center border-b border-slate-200/80 bg-white px-5 sm:px-8"><Tooltip content={isSidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}><button onClick={toggleSidebar} className="mr-3 hidden grid size-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 md:grid" aria-label="切换侧边栏">{isSidebarCollapsed ? <IconMenuUnfold /> : <IconMenuFold />}</button></Tooltip><span className="text-sm text-slate-400">企业工作台</span><IconLeft className="mx-2 rotate-180 text-xs text-slate-300" /><span className="text-sm font-medium text-slate-700">{current.label}</span></div>
-          <ContentPlaceholder item={current} />
+          {current.id === 'apps' ? <ApplicationCenter /> : <ContentPlaceholder item={current} />}
         </section>
       </div>
 

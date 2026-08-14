@@ -7,6 +7,12 @@
       "skillPath": "skills/arco-design/SKILL.md",
       "computedHash": "9be482cfa389f462897f6492d66ef48dff7a004c5b73014da5af002f8e2636e9"
     },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "93f53fd1c0352d3d7ec17b8f73d7351bf76f4821e55d123c9d2abc2c53ba48e4"
+    },
     "tailwind-design-system": {
       "source": "wshobson/agents",
       "sourceType": "github",
