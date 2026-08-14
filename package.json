@@ -7,10 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "docs:dev": "vitepress dev .",
-    "docs:build": "vitepress build .",
-    "docs:preview": "vitepress preview ."
+    "preview": "vite preview"
   },
   "dependencies": {
     "@arco-design/web-react": "^2.66.16",
@@ -34,7 +31,6 @@
     "globals": "^17.7.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.65.0",
-    "vitepress": "^1.6.4",
     "vite": "^8.2.0"
   }
 }

@@ -20,7 +20,7 @@
 - `src/UI/`：跨功能的 Arco 组件封装与 AI 抽屉。
 - `src/stores/`：客户端共享 UI 状态。
 - `src/index.css`：Tailwind 主题 token、跨组件样式和 Arco 覆盖样式。
-- `docs/`：核心知识与 VitePress 文档源；站点由 `.vitepress/config.mts` 配置。
+- `docs/`：核心知识与设计规划文档源。
 - `.agents/skills/`：仓库安装的专用工作流。
 
 ## 命令
@@ -40,12 +40,6 @@
     pnpm build
 
 `pnpm build` 会先运行 TypeScript project build（`tsc -b`），再运行 Vite 生产构建。仓库当前没有测试脚本；不要虚构测试命令。
-
-开发或校验文档站：
-
-    pnpm docs:dev
-    pnpm docs:build
-    pnpm docs:preview
 
 ## 工程约束
 
@@ -99,14 +93,12 @@
 - 安全敏感代码或新的信任边界 → `docs/SECURITY.md`
 - 可靠性、异步任务或可观测性 → `docs/RELIABILITY.md`
 - 路线图、非目标或实施计划 → `docs/PLANS.md` 与 `docs/exec-plans/`
-- VitePress 导航或站点配置 → `.vitepress/config.ts`
 
 仓库根目录的 `DESIGN.MD` 是大型参考资料副本，而非精简的项目设计事实来源；项目规则以 `docs/DESIGN.md` 为准。
 
 ## 验证
 
 - UI、TypeScript、状态或路由改动：运行 `pnpm lint` 与 `pnpm build`。
-- 文档站改动：运行 `pnpm docs:build`。
 - 新增异步行为或复杂交互：随功能添加适当的自动化覆盖，或明确记录当前测试缺口；仓库目前未配置测试运行器。
 - 可行时手动检查受影响路由和交互。
 

@@ -26,7 +26,7 @@
 | `src/UI/` | 可跨功能复用的 Arco 轻量封装与 AI 抽屉。 |
 | `src/stores/` | Zustand 共享 UI 开关状态。 |
 | `src/index.css` | Tailwind v4 token、全局基础样式与 Arco 覆盖。 |
-| `docs/` | 版本化的项目知识与 VitePress 文档源。 |
+| `docs/` | 版本化的项目知识与设计规范文档。 |
 | `.agents/skills/` | 可重复的专用 Agent 工作流。 |
 
 ## 当前运行与数据流

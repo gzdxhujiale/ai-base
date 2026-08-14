@@ -68,7 +68,17 @@ export function WorkspaceShell() {
   const params = useParams({ strict: false })
   const pageId = (params as { pageId?: string }).pageId ?? 'workbench'
   const current = useMemo(() => navItems.find((item) => item.id === pageId) ?? navItems[0], [pageId])
-  const { isSidebarCollapsed, commandOpen, aiDrawerOpen, toggleSidebar, setCommandOpen, setAiDrawerOpen } = useWorkspaceStore()
+  const {
+    isSidebarCollapsed,
+    commandOpen,
+    aiDrawerOpen,
+    activeAppDetailName,
+    activeAppDetailBack,
+    toggleSidebar,
+    setCommandOpen,
+    setAiDrawerOpen,
+    setActiveAppDetail,
+  } = useWorkspaceStore()
   const [searchValue, setSearchValue] = useState('')
 
   useEffect(() => {
@@ -82,11 +92,14 @@ export function WorkspaceShell() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [setCommandOpen])
 
-  const goTo = (id: string) => navigate({ to: id === 'workbench' ? '/' : '/$pageId', params: id === 'workbench' ? {} : { pageId: id } })
+  const goTo = (id: string) => {
+    setActiveAppDetail(null)
+    navigate({ to: id === 'workbench' ? '/' : '/$pageId', params: id === 'workbench' ? {} : { pageId: id } })
+  }
 
   return (
-    <main className="min-h-screen bg-[#f6f8fb] text-slate-800">
-      <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200/80 bg-white/95 px-4 backdrop-blur sm:px-6">
+    <main className="flex h-screen w-screen flex-col overflow-hidden bg-[#f6f8fb] text-slate-800">
+      <header className="z-20 flex h-16 shrink-0 items-center gap-3 border-b border-slate-200/80 bg-white px-4 sm:px-6">
         <Link to="/" className="group flex shrink-0 items-center gap-2.5" aria-label="返回我的工作台">
           <span className="grid size-8 place-items-center rounded-lg bg-[#165dff] text-sm font-bold tracking-tight text-white shadow-sm shadow-blue-200">Q</span>
           <span className="hidden text-base font-semibold tracking-tight text-slate-900 sm:block">临川</span>
@@ -116,11 +129,11 @@ export function WorkspaceShell() {
         </div>
       </header>
 
-      <div className="min-h-[calc(100vh-4rem)]">
-        <aside className={`fixed bottom-0 left-0 top-16 z-10 hidden overflow-y-auto border-r border-slate-200/80 bg-white transition-[width] duration-200 md:block ${isSidebarCollapsed ? 'w-[72px]' : 'w-60'}`}>
-          <nav className="px-3 pt-4" aria-label="主导航">
-            {navItems.map((item, index) => (
-              <div key={item.id} className={index === navItems.length - 1 ? 'mt-4 border-t border-slate-100 pt-4' : ''}>
+      <div className="flex flex-1 min-h-0 h-[calc(100vh-4rem)] w-full overflow-hidden">
+        <aside className={`shrink-0 self-stretch flex flex-col justify-between border-r border-slate-200/80 bg-white transition-[width] duration-200 ${isSidebarCollapsed ? 'w-[72px]' : 'w-60'}`}>
+          <nav className="flex-1 overflow-y-auto px-3 pt-4 space-y-1" aria-label="主导航">
+            {navItems.filter((item) => item.id !== 'settings').map((item) => (
+              <div key={item.id}>
                 <Tooltip content={item.label} position="right" disabled={!isSidebarCollapsed}>
                   <button onClick={() => goTo(item.id)} className={`group flex h-11 w-full items-center rounded-lg text-sm transition ${current.id === item.id ? 'bg-[#eff5ff] font-medium text-[#165dff]' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'} ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'}`}>
                     <span className={`text-lg ${current.id === item.id ? 'text-[#165dff]' : 'text-slate-400 group-hover:text-slate-600'}`}>{item.icon}</span>
@@ -130,11 +143,54 @@ export function WorkspaceShell() {
               </div>
             ))}
           </nav>
+
+          {/* Bottom Settings Nav Section */}
+          {navItems.find((item) => item.id === 'settings') && (
+            <div className="border-t border-slate-100 p-3" aria-label="底部导航">
+              {(() => {
+                const settingsItem = navItems.find((item) => item.id === 'settings')!
+                return (
+                  <Tooltip content={settingsItem.label} position="right" disabled={!isSidebarCollapsed}>
+                    <button onClick={() => goTo(settingsItem.id)} className={`group flex h-11 w-full items-center rounded-lg text-sm transition ${current.id === settingsItem.id ? 'bg-[#eff5ff] font-medium text-[#165dff]' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'} ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'}`}>
+                      <span className={`text-lg ${current.id === settingsItem.id ? 'text-[#165dff]' : 'text-slate-400 group-hover:text-slate-600'}`}>{settingsItem.icon}</span>
+                      {!isSidebarCollapsed && <span>{settingsItem.label}</span>}
+                    </button>
+                  </Tooltip>
+                )
+              })()}
+            </div>
+          )}
         </aside>
 
-        <section className={`min-w-0 transition-[margin] duration-200 md:ml-60 ${isSidebarCollapsed ? 'md:ml-[72px]' : ''}`}>
-          <div className="flex h-14 items-center border-b border-slate-200/80 bg-white px-5 sm:px-8"><Tooltip content={isSidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}><button onClick={toggleSidebar} className="mr-3 hidden grid size-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 md:grid" aria-label="切换侧边栏">{isSidebarCollapsed ? <IconMenuUnfold /> : <IconMenuFold />}</button></Tooltip><span className="text-sm text-slate-400">企业工作台</span><IconLeft className="mx-2 rotate-180 text-xs text-slate-300" /><span className="text-sm font-medium text-slate-700">{current.label}</span></div>
-          {current.id === 'apps' ? <ApplicationCenter /> : <ContentPlaceholder item={current} />}
+        <section className="flex flex-1 min-w-0 h-full flex-col overflow-hidden">
+          <div className="z-10 flex h-14 shrink-0 items-center border-b border-slate-200/80 bg-white px-5 sm:px-8">
+            <Tooltip content={isSidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}>
+              <button onClick={toggleSidebar} className="mr-3 hidden grid size-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 md:grid" aria-label="切换侧边栏">
+                {isSidebarCollapsed ? <IconMenuUnfold /> : <IconMenuFold />}
+              </button>
+            </Tooltip>
+            {current.id === 'apps' && activeAppDetailName ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => activeAppDetailBack?.()}
+                  className="cursor-pointer text-sm font-medium text-slate-500 hover:text-[#165dff] transition"
+                >
+                  {current.label}
+                </button>
+                <IconLeft className="mx-2 rotate-180 text-xs text-slate-300" />
+                <span className="text-sm font-semibold text-slate-800 truncate max-w-[320px]">
+                  {activeAppDetailName}
+                </span>
+              </>
+            ) : (
+              <span className="text-sm font-semibold text-slate-800">{current.label}</span>
+            )}
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {current.id === 'apps' ? <ApplicationCenter /> : <ContentPlaceholder item={current} />}
+          </div>
         </section>
       </div>
 

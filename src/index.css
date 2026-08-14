@@ -8,6 +8,7 @@
 
 @layer base {
   * { box-sizing: border-box; }
+  html, body, #root { height: 100%; min-height: 100%; }
   html { background: #f6f8fb; }
   body { margin: 0; min-width: 320px; font-family: var(--font-sans); }
   button, input { font: inherit; }
@@ -29,7 +30,103 @@
 .app-filter-tabs .arco-tabs-header-title:first-child { padding-left: 0; }
 .app-filter-tabs .arco-tabs-header-title-active { color: #165dff; font-weight: 500; }
 .app-filter-tabs .arco-tabs-header-ink { height: 2px; background: #165dff; }
-.create-application-modal .arco-modal-body { padding-top: 14px; }
-.create-application-modal .arco-tabs-header { margin-bottom: 16px; }
-.create-application-modal .arco-modal-header { position: relative; text-align: center; }
-.create-application-modal .arco-modal-title { display: inline-flex; }
+
+/* Minimal radius overrides for Arco inputs in App Center */
+.minimal-radius.arco-input-wrapper,
+.minimal-radius .arco-input-wrapper,
+.minimal-radius .arco-select-view,
+.minimal-radius .arco-textarea-wrapper,
+.minimal-radius .arco-picker,
+.minimal-radius .arco-input-number,
+.minimal-radius input,
+.minimal-radius textarea {
+  border-radius: 2px !important;
+}
+
+.app-center-tabs {
+  margin-bottom: 0 !important;
+  width: auto !important;
+}
+
+.app-center-tabs .arco-tabs-header,
+.app-center-tabs .arco-tabs-nav {
+  margin-bottom: 0 !important;
+  border-bottom: none !important;
+}
+
+.app-center-tabs .arco-tabs-header-nav,
+.app-center-tabs .arco-tabs-nav-tab {
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  width: auto !important;
+}
+
+.app-center-tabs .arco-tabs-header-list,
+.app-center-tabs .arco-tabs-nav-tab-list {
+  display: flex !important;
+  justify-content: flex-start !important;
+  flex: none !important;
+}
+
+.app-center-tabs .arco-tabs-header-title,
+.app-center-tabs .arco-tabs-tab {
+  margin-right: 4px !important;
+}
+
+.app-center-tabs .arco-tabs-content {
+  display: none !important;
+}
+
+.app-detail-tabs .arco-tabs-content {
+  display: none !important;
+}
+
+.app-detail-tabs .arco-tabs-header {
+  margin-bottom: 12px !important;
+}
+
+.create-app-modal .arco-modal-header,
+.create-application-modal .arco-modal-header {
+  position: relative;
+  text-align: center !important;
+  justify-content: center !important;
+  border-bottom: 1px solid #f2f3f5;
+  padding: 16px 20px;
+}
+
+.create-app-modal .arco-modal-title,
+.create-application-modal .arco-modal-title {
+  display: flex !important;
+  width: 100% !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+/* Form label & required asterisk horizontal layout */
+.arco-form-item-label,
+.arco-form-label-item,
+.arco-form-label-item > label,
+.arco-form-item-label-required {
+  display: inline-flex !important;
+  align-items: center !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+}
+
+.arco-form-label-item-required-symbol,
+.arco-form-item-label-required-symbol,
+.arco-form-label-item > .arco-icon,
+.arco-form-label-item::before {
+  display: inline-flex !important;
+  align-items: center !important;
+  vertical-align: middle !important;
+  margin-right: 4px !important;
+  line-height: 1 !important;
+}
+
+.arco-form-layout-vertical .arco-form-item-label {
+  margin-bottom: 4px !important;
+}
+
+
