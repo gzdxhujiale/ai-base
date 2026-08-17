@@ -10,6 +10,27 @@ import { router } from './router'
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1 } } })
 
+if (typeof window !== 'undefined') {
+  // 解决 Chrome 130+ 报 "Blocked aria-hidden on an element because its descendant retained focus" 违规
+  document.addEventListener(
+    'focusin',
+    (e) => {
+      const target = e.target as HTMLElement | null
+      if (target && target.getAttribute('aria-hidden') === 'true') {
+        target.removeAttribute('aria-hidden')
+        target.addEventListener(
+          'blur',
+          () => {
+            target.setAttribute('aria-hidden', 'true')
+          },
+          { once: true },
+        )
+      }
+    },
+    true,
+  )
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ConfigProvider componentConfig={{ Button: { size: 'default' } }}>

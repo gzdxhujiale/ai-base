@@ -7,6 +7,7 @@
 ## 规格索引
 
 - [新用户引导](./new-user-onboarding.md)
+- [知识空间与 RBAC 原型](./knowledge-rbac-prototype.md)
 
 ## 实现状态说明
 

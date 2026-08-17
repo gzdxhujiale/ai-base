@@ -22,7 +22,10 @@ import { Input } from '../../UI/Input'
 import { Modal } from '../../UI/Modal'
 import { AiAssistantDrawer } from '../../UI/AiAssistantDrawer'
 import { ApplicationCenter } from '../application-center/ApplicationCenter'
+import { KnowledgeSpace } from '../knowledge/KnowledgeSpace'
+import { EnterpriseSettings } from '../enterprise-settings/EnterpriseSettings'
 import { useWorkspaceStore } from '../../stores/workspace-store'
+import { roleLabels, useKnowledgeStore } from '../../stores/knowledge-store'
 
 type NavigationItem = {
   id: string
@@ -69,7 +72,9 @@ export function WorkspaceShell() {
   const navigate = useNavigate()
   const params = useParams({ strict: false })
   const pageId = (params as { pageId?: string }).pageId ?? 'workbench'
-  const current = useMemo(() => navItems.find((item) => item.id === pageId) ?? navItems[0], [pageId])
+  const { role, setRole } = useKnowledgeStore()
+  const visibleNavItems = navItems
+  const current = useMemo(() => visibleNavItems.find((item) => item.id === pageId) ?? navItems[0], [pageId, visibleNavItems])
   const {
     isSidebarCollapsed,
     commandOpen,
@@ -99,6 +104,10 @@ export function WorkspaceShell() {
     navigate({ to: id === 'workbench' ? '/' : '/$pageId', params: id === 'workbench' ? {} : { pageId: id } })
   }
 
+  const switchRole = (nextRole: typeof role) => {
+    setRole(nextRole)
+  }
+
   return (
     <main className="flex h-screen w-screen flex-col overflow-hidden bg-[#f6f8fb] text-slate-800">
       <header className="z-20 flex h-16 shrink-0 items-center gap-3 border-b border-slate-200/80 bg-white px-4 sm:px-6">
@@ -125,8 +134,13 @@ export function WorkspaceShell() {
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
           <Tooltip content="全局搜索 (⌘ K)"><button onClick={() => setCommandOpen(true)} className="grid size-9 place-items-center rounded-lg text-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 lg:hidden" aria-label="打开搜索"><IconSearch /></button></Tooltip>
           <Tooltip content="询问企业 AI"><button onClick={() => setAiDrawerOpen(true)} className="hidden h-9 items-center gap-2 rounded-lg bg-[#eff5ff] px-3 text-sm font-medium text-[#165dff] transition hover:bg-[#e1edff] sm:flex"><IconExperiment /> 问企业 AI</button></Tooltip>
-          <Dropdown droplist={<Menu><Menu.Item key="profile">个人资料</Menu.Item><Menu.Item key="logout">退出登录</Menu.Item></Menu>} position="br">
-            <button className="ml-1 flex items-center gap-2 rounded-lg p-1 transition hover:bg-slate-50"><Avatar size={30} style={{ backgroundColor: '#e8f1ff', color: '#165dff' }}><IconUser /></Avatar><span className="hidden text-sm font-medium text-slate-700 sm:block">用户</span><IconDown className="hidden text-xs text-slate-400 sm:block" /></button>
+          <Dropdown droplist={<Menu>
+            <Menu.Item key="profile">个人资料</Menu.Item>
+            <Menu.Item key="divider" disabled>切换角色</Menu.Item>
+            {(['employee', 'manager', 'owner'] as const).map((item) => <Menu.Item key={item} onClick={() => switchRole(item)} disabled={role === item}>{roleLabels[item]}{role === item ? '（当前）' : ''}</Menu.Item>)}
+            <Menu.Item key="logout">退出登录</Menu.Item>
+          </Menu>} position="br">
+            <button className="ml-1 flex items-center gap-2 rounded-lg p-1 transition hover:bg-slate-50"><Avatar size={30} style={{ backgroundColor: '#e8f1ff', color: '#165dff' }}><IconUser /></Avatar><span className="hidden text-sm font-medium text-slate-700 sm:block">{roleLabels[role]}</span><IconDown className="hidden text-xs text-slate-400 sm:block" /></button>
           </Dropdown>
         </div>
       </header>
@@ -134,7 +148,7 @@ export function WorkspaceShell() {
       <div className="flex flex-1 min-h-0 h-[calc(100vh-4rem)] w-full overflow-hidden">
         <aside className={`shrink-0 self-stretch flex flex-col justify-between border-r border-slate-200/80 bg-white transition-[width] duration-200 ${isSidebarCollapsed ? 'w-[72px]' : 'w-60'}`}>
           <nav className="flex-1 overflow-y-auto px-3 pt-4 space-y-1" aria-label="主导航">
-            {navItems.filter((item) => item.id !== 'settings').map((item) => (
+            {visibleNavItems.filter((item) => item.id !== 'settings').map((item) => (
               <div key={item.id}>
                 <Tooltip content={item.label} position="right" disabled={!isSidebarCollapsed}>
                   <button onClick={() => goTo(item.id)} className={`group flex h-11 w-full items-center rounded-lg text-sm transition ${current.id === item.id ? 'bg-[#eff5ff] font-medium text-[#165dff]' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'} ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'}`}>
@@ -147,10 +161,10 @@ export function WorkspaceShell() {
           </nav>
 
           {/* Bottom Settings Nav Section */}
-          {navItems.find((item) => item.id === 'settings') && (
+          {visibleNavItems.find((item) => item.id === 'settings') && (
             <div className="border-t border-slate-100 p-3" aria-label="底部导航">
               {(() => {
-                const settingsItem = navItems.find((item) => item.id === 'settings')!
+                const settingsItem = visibleNavItems.find((item) => item.id === 'settings')!
                 return (
                   <Tooltip content={settingsItem.label} position="right" disabled={!isSidebarCollapsed}>
                     <button onClick={() => goTo(settingsItem.id)} className={`group flex h-11 w-full items-center rounded-lg text-sm transition ${current.id === settingsItem.id ? 'bg-[#eff5ff] font-medium text-[#165dff]' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'} ${isSidebarCollapsed ? 'justify-center' : 'gap-3 px-3'}`}>
@@ -191,13 +205,13 @@ export function WorkspaceShell() {
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto">
-            {current.id === 'apps' ? <ApplicationCenter /> : <ContentPlaceholder item={current} />}
+            {current.id === 'apps' ? <ApplicationCenter /> : current.id === 'knowledge' ? <KnowledgeSpace /> : current.id === 'settings' ? <EnterpriseSettings onOpenKnowledge={() => goTo('knowledge')} /> : <ContentPlaceholder item={current} />}
           </div>
         </section>
       </div>
 
       <Modal visible={commandOpen} footer={null} title={null} closable={false} onCancel={() => setCommandOpen(false)} className="command-modal" style={{ width: 560 }}>
-        <div className="p-1"><Input autoFocus value={searchValue} onChange={setSearchValue} prefix={<IconSearch className="text-slate-400" />} placeholder="搜索应用、任务或成员" className="command-input" /><p className="px-3 pb-2 pt-4 text-xs font-medium text-slate-400">快速访问</p>{navItems.filter((item) => item.label.includes(searchValue) || !searchValue).slice(0, 5).map((item) => <button key={item.id} onClick={() => { goTo(item.id); setCommandOpen(false) }} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition hover:bg-slate-50"><span className={`grid size-8 place-items-center rounded-lg ${item.tone} text-white`}>{item.icon}</span><span><span className="block text-sm font-medium text-slate-700">{item.label}</span><span className="block text-xs text-slate-400">{item.description}</span></span></button>)}</div>
+        <div className="p-1"><Input autoFocus value={searchValue} onChange={setSearchValue} prefix={<IconSearch className="text-slate-400" />} placeholder="搜索应用、任务或成员" className="command-input" /><p className="px-3 pb-2 pt-4 text-xs font-medium text-slate-400">快速访问</p>{visibleNavItems.filter((item) => item.label.includes(searchValue) || !searchValue).slice(0, 5).map((item) => <button key={item.id} onClick={() => { goTo(item.id); setCommandOpen(false) }} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition hover:bg-slate-50"><span className={`grid size-8 place-items-center rounded-lg ${item.tone} text-white`}>{item.icon}</span><span><span className="block text-sm font-medium text-slate-700">{item.label}</span><span className="block text-xs text-slate-400">{item.description}</span></span></button>)}</div>
       </Modal>
       <AiAssistantDrawer visible={aiDrawerOpen} onClose={() => setAiDrawerOpen(false)} />
     </main>
