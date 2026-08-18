@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Empty, Input as ArcoInput, Message, Select, Tag } from '@arco-design/web-react'
 import {
   IconApps,
@@ -603,7 +603,14 @@ export function ApplicationCenter() {
   const [interactiveModalVisible, setInteractiveModalVisible] = useState(false)
   const [interactiveApp, setInteractiveApp] = useState<AppItem | null>(null)
 
-  const { setActiveAppDetail } = useWorkspaceStore()
+  const {
+    workbenchApps,
+    pendingWorkbenchAppId,
+    addWorkbenchApp,
+    removeWorkbenchApp,
+    setPendingWorkbenchAppId,
+    setActiveAppDetail,
+  } = useWorkspaceStore()
 
   useEffect(() => {
     return () => {
@@ -644,7 +651,7 @@ export function ApplicationCenter() {
     return total.toFixed(1)
   }, [apps])
 
-  const handleOpenDetail = (app: AppItem, tab = 'overview') => {
+  const handleOpenDetail = useCallback((app: AppItem, tab = 'overview') => {
     setSelectedApp(app)
     setActiveTabInDetail(tab)
     setViewMode('detail')
@@ -652,6 +659,26 @@ export function ApplicationCenter() {
       setViewMode('list')
       setActiveAppDetail(null)
     })
+  }, [setActiveAppDetail])
+
+  useEffect(() => {
+    if (!pendingWorkbenchAppId) return
+    const timer = window.setTimeout(() => {
+      const app = apps.find((item) => item.id === pendingWorkbenchAppId)
+      if (app) handleOpenDetail(app)
+      setPendingWorkbenchAppId(null)
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [apps, handleOpenDetail, pendingWorkbenchAppId, setPendingWorkbenchAppId])
+
+  const handleAddToWorkbench = (app: AppItem) => {
+    addWorkbenchApp(app)
+    Message.success({ content: `已将「${app.name}」加入我的工作台` })
+  }
+
+  const handleRemoveFromWorkbench = (app: AppItem) => {
+    removeWorkbenchApp(app.id)
+    Message.success({ content: `已将「${app.name}」从我的工作台移除` })
   }
 
   const handleBackToList = () => {
@@ -875,6 +902,9 @@ export function ApplicationCenter() {
             onToggleEnable={handleToggleEnable}
             onUpdateApp={handleUpdateApp}
             onRunApp={handleRunAppNow}
+            onAddToWorkbench={handleAddToWorkbench}
+            onRemoveFromWorkbench={handleRemoveFromWorkbench}
+            isInWorkbench={workbenchApps.some((item) => item.id === selectedApp.id)}
           />
         </div>
       </section>

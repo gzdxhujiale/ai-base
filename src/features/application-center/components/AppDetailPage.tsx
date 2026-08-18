@@ -45,6 +45,9 @@ interface AppDetailPageProps {
   onToggleEnable?: (app: AppItem) => void
   onUpdateApp?: (app: AppItem) => void
   onRunApp?: (app: AppItem, values: Record<string, unknown>) => void
+  onAddToWorkbench?: (app: AppItem) => void
+  onRemoveFromWorkbench?: (app: AppItem) => void
+  isInWorkbench?: boolean
 }
 
 const spaceLabels: Record<string, string> = {
@@ -66,6 +69,9 @@ export function AppDetailPage({
   onToggleEnable,
   onUpdateApp,
   onRunApp,
+  onAddToWorkbench,
+  onRemoveFromWorkbench,
+  isInWorkbench = false,
 }: AppDetailPageProps) {
   const [activeTab, setActiveTab] = useState(initialTab)
   const [interactiveModalVisible, setInteractiveModalVisible] = useState(false)
@@ -342,6 +348,16 @@ export function AppDetailPage({
 
             <Button type="secondary" icon={<IconShareInternal />} className="!rounded-[2px]" onClick={handleShare}>
               分享
+            </Button>
+
+            <Button
+              type={isInWorkbench ? 'secondary' : 'primary'}
+              status={isInWorkbench ? 'danger' : undefined}
+              icon={isInWorkbench ? <IconDelete /> : <IconPlus />}
+              className="!rounded-[2px]"
+              onClick={() => isInWorkbench ? onRemoveFromWorkbench?.(app) : onAddToWorkbench?.(app)}
+            >
+              {isInWorkbench ? '从工作台移除' : '加入工作台'}
             </Button>
 
             {!app.isInstalled ? (

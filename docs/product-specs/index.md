@@ -8,6 +8,7 @@
 
 - [新用户引导](./new-user-onboarding.md)
 - [知识空间与 RBAC 原型](./knowledge-rbac-prototype.md)
+- [我的工作台](./my-workbench.md)
 
 ## 实现状态说明
 

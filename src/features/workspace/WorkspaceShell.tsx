@@ -24,6 +24,7 @@ import { AiAssistantDrawer } from '../../UI/AiAssistantDrawer'
 import { ApplicationCenter } from '../application-center/ApplicationCenter'
 import { KnowledgeSpace } from '../knowledge/KnowledgeSpace'
 import { EnterpriseSettings } from '../enterprise-settings/EnterpriseSettings'
+import { WorkbenchPage } from './WorkbenchPage'
 import { useWorkspaceStore } from '../../stores/workspace-store'
 import { roleLabels, useKnowledgeStore } from '../../stores/knowledge-store'
 
@@ -36,7 +37,7 @@ type NavigationItem = {
 }
 
 const navItems: NavigationItem[] = [
-  { id: 'workbench', label: '我的工作台', description: '聚合待办、日程与团队动态', icon: <IconHome />, tone: 'bg-blue-500' },
+  { id: 'workbench', label: '我的工作台', description: '聚合角色待办、简报与工作入口', icon: <IconHome />, tone: 'bg-blue-500' },
   { id: 'tasks', label: '任务中心', description: '管理任务进度与协作事项', icon: <IconCalendar />, tone: 'bg-violet-500' },
   { id: 'apps', label: '应用中心', description: '发现并使用企业应用', icon: <IconApps />, tone: 'bg-sky-500' },
   { id: 'knowledge', label: '知识库', description: '构建与共享企业领域知识库', icon: <IconBook />, tone: 'bg-indigo-500' },
@@ -85,6 +86,7 @@ export function WorkspaceShell() {
     setCommandOpen,
     setAiDrawerOpen,
     setActiveAppDetail,
+    setPendingWorkbenchAppId,
   } = useWorkspaceStore()
   const [searchValue, setSearchValue] = useState('')
 
@@ -106,6 +108,11 @@ export function WorkspaceShell() {
 
   const switchRole = (nextRole: typeof role) => {
     setRole(nextRole)
+  }
+
+  const openWorkbenchApp = (appId: string) => {
+    setPendingWorkbenchAppId(appId)
+    goTo('apps')
   }
 
   return (
@@ -205,7 +212,7 @@ export function WorkspaceShell() {
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto">
-            {current.id === 'apps' ? <ApplicationCenter /> : current.id === 'knowledge' ? <KnowledgeSpace /> : current.id === 'settings' ? <EnterpriseSettings onOpenKnowledge={() => goTo('knowledge')} /> : <ContentPlaceholder item={current} />}
+            {current.id === 'workbench' ? <WorkbenchPage role={role} onNavigate={goTo} onOpenAi={() => setAiDrawerOpen(true)} onOpenApp={openWorkbenchApp} /> : current.id === 'apps' ? <ApplicationCenter /> : current.id === 'knowledge' ? <KnowledgeSpace /> : current.id === 'settings' ? <EnterpriseSettings onOpenKnowledge={() => goTo('knowledge')} /> : <ContentPlaceholder item={current} />}
           </div>
         </section>
       </div>
